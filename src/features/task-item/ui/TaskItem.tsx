@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { FormEvent } from "react"
 import { useShallow } from "zustand/shallow"
 
@@ -32,12 +32,6 @@ export const TaskItem = ({
   const [description, setDescription] = useState(task.description ?? "")
   const [tag, setTag] = useState(task.tag ?? "")
 
-  useEffect(() => {
-    setTitle(task.title)
-    setDescription(task.description ?? "")
-    setTag(task.tag ?? "")
-  }, [task])
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const updated = updateTask(projectId, task.id, {
@@ -50,19 +44,16 @@ export const TaskItem = ({
     }
   }
 
-  const handleCancel = () => {
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setIsEditing(false)
+      return
+    }
+
     setTitle(task.title)
     setDescription(task.description ?? "")
     setTag(task.tag ?? "")
-    setIsEditing(false)
-  }
-
-  const handleEditToggle = () => {
-    if (isEditing) {
-      handleCancel()
-    } else {
-      setIsEditing(true)
-    }
+    setIsEditing(true)
   }
 
   return (
