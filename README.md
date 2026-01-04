@@ -1,73 +1,79 @@
-# React + TypeScript + Vite
+﻿# Assignment 1 (Advanced Frontend React) — отчет
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Коротко: проект переработан по FSD, состояние перенесено на Zustand, добавлены новые функции, оптимизации, тесты (unit/integration/E2E), защита от XSS и CI.
 
-Currently, two official plugins are available:
+## Модуль 1. Архитектура и масштабирование
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Анализ исходного состояния
+- Логика и UI были смешаны в `components/context/store/hooks/types`, что затрудняет расширение.
+- Контекст и reducer дублировали логику, при миграции на Zustand оставались лишние файлы.
 
-## React Compiler
+### Решение: Feature-Sliced Design
+Структура разделена по слоям:
+- `src/app` — входные точки, провайдеры, глобальные стили.
+- `src/pages` — страницы приложения (Board, Analytics).
+- `src/widgets` — крупные блоки UI (хедер, колонки).
+- `src/features` — пользовательские сценарии (создание/редактирование, фильтры, инструменты доски).
+- `src/entities` — доменная модель и стор (Project/Task).
+- `src/shared` — утилиты и общие компоненты.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Глобальное состояние
+- Zustand с persist в `localStorage`.
+- Валидация и нормализация данных при импорте.
 
-## Expanding the ESLint configuration
+## Модуль 2. Производительность
+- `useMemo` для вычислений (общее число задач, список тегов, фильтр).
+- `React.memo` для карточек задач.
+- `React.lazy` + `Suspense` для страниц.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Модуль 3. TypeScript и надежность
+- Строго типизированные сущности и действия стора.
+- Валидация импортируемых данных.
+- Error Boundary для устойчивости интерфейса.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Модуль 4. Тестирование, безопасность, DevOps
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Unit и Integration (Vitest + RTL)
+Файлы тестов:
+- `src/entities/project/model/store.test.ts`
+- `src/pages/board/ui/BoardPage.test.tsx`
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Покрытие:
+- Санитайзинг входных данных.
+- Защита от некорректного перемещения задач.
+- Защита от пустых заголовков.
+- Фильтрация по поисковому запросу.
+- Inline-редактирование задачи.
+
+### E2E (Playwright)
+Файл теста:
+- `e2e/board.spec.ts`
+
+Сценарий:
+- Открыть доску.
+- Добавить задачу.
+- Перейти в аналитику и вернуться.
+- Проверить сохранение данных.
+
+### XSS
+- Санитайзинг полей `title/description/tag` в сторе.
+- Валидация импорта JSON.
+
+### CI
+- GitHub Actions: линт, unit/integration, build, E2E.
+- Файл: `.github/workflows/ci.yml`.
+
+## Как запустить
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Скрипты
+- `npm run test` — watch режим
+- `npm run test:run` — один прогон
+- `npm run test:e2e` — E2E тесты
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Примечания
+- Роутинг по hash: `#/` и `#/analytics`.
+- localStorage ключ: `project-board-state-v2`.
