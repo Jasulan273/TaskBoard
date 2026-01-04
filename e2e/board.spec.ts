@@ -16,6 +16,6 @@ test("board flow works", async ({ page }) => {
   await page.getByRole("link", { name: "Analytics" }).click()
   await expect(page.getByRole("heading", { name: "Flow Insights" })).toBeVisible()
 
-  await page.getByRole("link", { name: "Board" }).click()
+  await page.getByRole("link", { name: "Board", exact: true }).click()
   await expect(page.getByText("E2E task")).toBeVisible()
 })
